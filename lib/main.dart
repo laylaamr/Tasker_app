@@ -1,125 +1,225 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:tasker_app/todo.dart';
+import 'package:tasker_app/todo_provider.dart';
 
-void main() {
-  runApp(const MyApp());
+
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+ await TodoProvider.instance.open();
+  runApp(MyApp());
+}
+
+String getFormattedDate() {
+  final now = DateTime.now();
+  final formatter = DateFormat('dd'); // Adjust format as needed
+  return formatter.format(now);
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Tasker',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+  const MyHomePage({super.key});
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
+  List<Todo> todoList = [];
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+    DateTime now = DateTime.now();
+    String formattedDateDay = DateFormat.d().format(now);
+    String formattedDateYear = DateFormat.y().format(now);
+    String formattedDateMonth = DateFormat.MMM().format(now);
+    String formattedDateDayName = DateFormat.EEEE().format(now).toUpperCase();
+
+    return SafeArea(
+      child: Scaffold(
+        drawer: Drawer(),
+        floatingActionButton: FloatingActionButton(
+          backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(50),
+          ),
+          onPressed: () async{
+            TextEditingController nameController =TextEditingController();
+            DateTime ?selectedDate;
+          await  showModalBottomSheet(context: context, builder: (context){
+             return Padding(padding: EdgeInsets.all(20),
+             child: Column(children: [
+               TextField(
+                 controller: nameController,
+                 decoration: InputDecoration(label: Text("Todo name")),
+               ),
+               Row(
+                 children: [
+                   IconButton(onPressed: ()async {
+                     selectedDate = await showDatePicker(context: context, firstDate: DateTime(2024), lastDate: DateTime(2026));
+                     setState(() {
+                     });
+                   }, icon: Icon(Icons.calendar_month)),
+                   Text(selectedDate.toString()!="null"?selectedDate.toString():"No Date Chosen ")
+                 ],
+               ),
+               SizedBox(height: 20,),
+               TextButton(onPressed: (){
+                 TodoProvider.instance.insert(Todo(
+                   name:nameController.text,
+                   date: selectedDate!.millisecondsSinceEpoch,
+                   isChecked: false
+                 ));
+                 Navigator.of(context).pop();
+               }, child: Text("Save"))
+               
+
+             ],),);
+           });
+          },
+          child: const Icon(
+            Icons.add,
+            size: 30,
+          ),
+        ),
+        appBar: AppBar(
+          leading: IconButton(
+            iconSize: 30.0,
+            color: Colors.white, // Change the drawer icon size here
+            icon: Icon(Icons.menu),
+            onPressed: () {
+              Scaffold.of(context).openDrawer();
+            },
+          ),
+          backgroundColor: Colors.blue,
+          title: Text(
+            "Tasker",
+            style: TextStyle(fontSize: 30, fontWeight: FontWeight.w500, color: Colors.white),
+          ),
+        ),
+        body: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.all(10),
+              color: Colors.blue,
+              width: double.infinity,
+              height: 100,
+              child: Row(
+                children: [
+                  Text(
+                    formattedDateDay,
+                    style: const TextStyle(
+                      fontSize: 50,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+
+                      Text(
+                        formattedDateMonth,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                      Text(
+                        formattedDateYear,
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  Text(
+                    formattedDateDayName,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            Expanded(
+              child: FutureBuilder<List<Todo>>(
+                  future: TodoProvider.instance.getAllTodo(),
+                  builder:(context,snapshot) {
+                    if(snapshot.hasError){
+                      return Center(
+                        child: Text(snapshot.hasError.toString()),
+                      );
+                    }
+                    if(snapshot.hasData){
+                      todoList=snapshot.data!;
+                return ListView.builder(
+                  itemCount: todoList.length,
+                  itemBuilder: (context, index) {
+                    Todo todo = todoList[index];
+                    return ListTile(
+                      leading: Checkbox(
+                        value: todo.isChecked,
+                        onChanged: (bool? value) async{
+                          setState(() {
+                            todoList[index].isChecked = value!;
+                          });
+                          await TodoProvider.instance.update(Todo(
+                            id: todo.id,
+                            name: todo.name,
+                            date: todo.date,
+                            isChecked: value!,
+                          ));
+                        },
+                      ),
+                      title: Text(todo.name),
+                      subtitle: Text(
+                          DateTime.fromMillisecondsSinceEpoch(todo.date)
+                              .toString()),
+                      trailing: IconButton(
+                        onPressed: () async{
+                          if(todo.id!= null){
+                           await TodoProvider.instance.delete(todo.id!);
+                          }
+
+                          setState(() {
+
+                          });
+                        },
+                        icon: Icon(Icons.delete, color: Colors.red, size: 20),
+                      ),
+                    );
+                  },);}
+                return Center(
+                  child: Container(width: 100,height: 100,
+                      child: CircularProgressIndicator()),
+                );
+                
+              } ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
+
+
+
+
+
+
